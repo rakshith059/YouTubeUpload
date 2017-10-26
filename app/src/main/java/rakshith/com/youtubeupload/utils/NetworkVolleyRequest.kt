@@ -1,12 +1,16 @@
 package rakshith.com.youtubeupload.utils
 
 import android.util.Log
+import com.android.volley.AuthFailureError
+import com.android.volley.DefaultRetryPolicy
 import com.android.volley.Request
 import com.android.volley.Response
+import java.io.File
 import java.io.UnsupportedEncodingException
 import java.lang.reflect.Type
 import java.net.URLEncoder
-import java.util.HashMap
+import java.util.*
+
 
 /**
  * Created YouTubeUpload by rakshith on 10/12/17.
@@ -83,7 +87,7 @@ class NetworkVolleyRequest<T>(protected var method: Int, protected var url: Stri
 
     fun execute() {
         createRequest()
-        AppController.instance?.addToRequestQueue(request as Request<T>)
+        AppController.getInstance()?.addToRequestQueue(request as Request<T>)
     }
 
     protected var requestCreated = false
@@ -105,12 +109,14 @@ class NetworkVolleyRequest<T>(protected var method: Int, protected var url: Stri
         val networkResponse = NetworkVolleyResponse(callBack)
 
         if (type is Class<*> && type === String::class.java) {
-            request = VolleyStringRequest(method, url, contentType, body as String, header, networkResponse as Response.Listener<String>, networkResponse) as Request<T>
+            if (body == null) {
+                request = VolleyStringRequest(method, url, contentType, "", header, networkResponse as Response.Listener<String>, networkResponse) as Request<T>
+            } else
+                request = VolleyStringRequest(method, url, contentType, body, header, networkResponse as Response.Listener<String>, networkResponse) as Request<T>
         }
-        //        else if(type instanceof Class && type == MultipartRequest.class)
-        //        {
-        //            request = (Request<T>) new MultipartRequest(Constants.UPLOAD_PIC_URL, null, contentType , multipartBody, (Response.Listener<String>)networkResponse);
-        //        }
+//        else if (type is Class<*> && type == VolleyMultipartRequest::class.java) {
+//            request = VolleyMultipartRequest(method , url , contentType , body , header , networkResponse as Response.Listener)
+//        }
         request?.tag = this
         //        PriorityAwareRequest.class.cast(request).setPriority(priority);
     }
