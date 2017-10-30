@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.provider.Settings;
+import android.support.multidex.MultiDex;
+import android.support.multidex.MultiDexApplication;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -23,7 +25,7 @@ import java.net.CookiePolicy;
  * Created YouTubeUpload by rakshith on 10/25/17.
  */
 
-public class AppController extends Application {
+public class AppController extends MultiDexApplication {
 
     public static float APP_VERSION;
     public static String DEVICE_ID;
@@ -36,6 +38,12 @@ public class AppController extends Application {
 
     private static AppController mInstance;
     private CookieManager cookieManager;
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        MultiDex.install(this);
+    }
 
     @Override
     public void onCreate() {

@@ -1,6 +1,5 @@
 package rakshith.com.youtubeupload.fragments
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Fragment
@@ -17,19 +16,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import com.android.volley.toolbox.ImageLoader
-import com.android.volley.toolbox.NetworkImageView
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.plus.Plus
 import com.google.android.gms.plus.PlusOneButton
-import kotlinx.android.synthetic.main.upload_list_fragment.*
 import rakshith.com.youtubeupload.R
 import android.widget.TextView
 import android.widget.BaseAdapter
 import rakshith.com.youtubeupload.utils.VideoData
 import java.util.List
 import android.widget.GridView
-import java.security.Permission
 
 
 @SuppressLint("ValidFragment")
@@ -235,7 +231,7 @@ class UploadListFragment() : Fragment(), GoogleApiClient.OnConnectionFailedListe
         fun onConnected(connectedAccountName: String)
     }
 
-    fun setVideos(videos: java.util.List<VideoData>?) {
+    fun setVideos(videos: kotlin.collections.List<VideoData>?) {
         if (!isAdded) {
             return
         }

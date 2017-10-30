@@ -21,21 +21,18 @@ import android.view.View
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_audio_upload.*
 import rakshith.com.youtubeupload.R
-import rakshith.com.youtubeupload.utils.NetworkVolleyRequest
 import rakshith.com.youtubeupload.utils.NetworkVolleyRequest.Callback
 import java.io.IOException
 import android.text.TextUtils
+import com.android.volley.DefaultRetryPolicy
 import com.android.volley.NetworkResponse
 import com.android.volley.Response
 import com.android.volley.VolleyError
 import com.android.volley.toolbox.Volley
 import com.google.gson.Gson
-import org.apache.http.util.ByteArrayBuffer
 import rakshith.com.youtubeupload.models.AccessToken
 import rakshith.com.youtubeupload.models.DataPart
-import rakshith.com.youtubeupload.utils.ApiResponse
-import rakshith.com.youtubeupload.utils.Constants
-import rakshith.com.youtubeupload.utils.RequestMultiPart
+import rakshith.com.youtubeupload.utils.*
 import java.io.BufferedInputStream
 import java.io.File
 import java.net.URL
@@ -191,16 +188,33 @@ class AudioUploadActivity : AppCompatActivity() {
             var uuid = UUID.randomUUID().toString()
             var boundary = "----------------------------" + uuid
             var fileName: String = "SampleUpload-" + System.currentTimeMillis()
-            var params: HashMap<String, String> = HashMap<String, String>()
-            params.put("name", fileName)
 
             var file: File = File(audioSavePath)
 
-            RequestMultiPart(file, fileName, boundary, uploadAudioUrl, "File", params, object : ApiResponse<String> {
-                override fun onCompletion(result: String) {
-                    Log.d("Rakshith", "response from multipart success == " + result)
+            var params: HashMap<String, String> = HashMap<String, String>()
+            params.put("mp3", file.toString())
+            params.put("name", fileName)
+
+            var imageUploadReq = MultipartRequest(uploadAudioUrl, object : Response.ErrorListener {
+                override fun onErrorResponse(error: VolleyError?) {
+                    Log.d("Rakshith", "response from multipart error ==> " + error?.message)
                 }
-            })
+            }, object : Response.Listener<String> {
+                override fun onResponse(response: String?) {
+                    Log.d("Rakshith", "response from multipart success ==> " + response?.toString())
+                }
+            }, file, params)
+
+            imageUploadReq.retryPolicy = DefaultRetryPolicy(1000 * 60, DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+
+            AppController.getInstance().addToRequestQueue(imageUploadReq)
+
+//            RequestMultiPart(file, fileName, boundary, uploadAudioUrl, "File", params, object : ApiResponse<String> {
+//                override fun onCompletion(result: String) {
+//                    Log.d("Rakshith", "response from multipart success == " + result)
+//                }
+//            })
         }
 
 //        if (!TextUtils.isEmpty(accessToken)) {
@@ -239,27 +253,27 @@ class AudioUploadActivity : AppCompatActivity() {
 //        }
     }
 
-    private fun getByteArrayImage(url: String?): ByteArray? {
-        try {
-            val imageUrl = URL(url)
-            val ucon = imageUrl.openConnection()
-
-            val `is` = ucon.getInputStream()
-            val bis = BufferedInputStream(`is`)
-
-            val baf = ByteArrayBuffer(500)
-            var current = 0
-            while ({ current = bis.read(); current }() != -1) {
-                baf.append(current.toByte().toInt())
-            }
-
-            return baf.toByteArray()
-        } catch (e: Exception) {
-            Log.d("ImageManager", "Error: " + e.toString())
-        }
-
-        return null
-    }
+//    private fun getByteArrayImage(url: String?): ByteArray? {
+//        try {
+//            val imageUrl = URL(url)
+//            val ucon = imageUrl.openConnection()
+//
+//            val `is` = ucon.getInputStream()
+//            val bis = BufferedInputStream(`is`)
+//
+//            val baf = ByteArrayBuffer(500)
+//            var current = 0
+//            while ({ current = bis.read(); current }() != -1) {
+//                baf.append(current.toByte().toInt())
+//            }
+//
+//            return baf.toByteArray()
+//        } catch (e: Exception) {
+//            Log.d("ImageManager", "Error: " + e.toString())
+//        }
+//
+//        return null
+//    }
 
     private val CLIENT_ID: String = "sqM2pz7u2VMPsKbyHe"
     private val REDIRECT_URI: String = "https://rakshith.com/mixcloud-uri"

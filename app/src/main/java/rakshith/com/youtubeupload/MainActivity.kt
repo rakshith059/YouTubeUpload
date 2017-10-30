@@ -1,7 +1,6 @@
 package rakshith.com.youtubeupload
 
 import android.accounts.AccountManager
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -36,8 +35,6 @@ import rakshith.com.youtubeupload.fragments.UploadListFragment
 import rakshith.com.youtubeupload.utils.*
 import java.io.IOException
 import java.util.*
-import java.util.List
-
 
 class MainActivity : PermissionsActivity(), UploadListFragment.CallBacks {
     internal val transport = AndroidHttp.newCompatibleTransport()

@@ -4,100 +4,77 @@ import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.Response;
-import com.android.volley.Response.ErrorListener;
-import com.android.volley.Response.Listener;
 import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.HttpHeaderParser;
+
 import org.apache.http.HttpEntity;
-import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
-public class MultipartRequest extends Request<String>  {
+public class MultipartRequest extends Request<String> {
 
-    private MultipartEntityBuilder mBuilder = MultipartEntityBuilder.create();
+// private MultipartEntity entity = new MultipartEntity();
+
+    MultipartEntityBuilder entity = MultipartEntityBuilder.create();
+    HttpEntity httpentity;
+    private static final String FILE_PART_NAME = "file";
+
     private final Response.Listener<String> mListener;
-    private final File mImageFile;
-    protected Map<String, String> headers;
-    private String mBoundary;
-    private Map<String, String> mParams;
-    private String mFileFieldName;
-    private String mFilename;
-    private String mBodyContentType;
+    private final File mFilePart;
+    private final Map<String, String> mStringPart;
 
-    public void setBoundary(String boundary) {
-        this.mBoundary = boundary;
-    }
-
-    public MultipartRequest(String url, final Map<String, String> params, File imageFile, String filename, String fileFieldName, ErrorListener errorListener, Listener<String> listener ){
+    public MultipartRequest(String url, Response.ErrorListener errorListener,
+                            Response.Listener<String> listener, File file,
+                            Map<String, String> mStringPart) {
         super(Method.POST, url, errorListener);
 
         mListener = listener;
-        mImageFile = imageFile;
-        mParams = params;
-        mFileFieldName = fileFieldName;
-        mFilename = filename;
-
+        mFilePart = file;
+        this.mStringPart = mStringPart;
+        entity.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
         buildMultipartEntity();
     }
 
-    @Override
-    public Map<String, String> getHeaders() throws AuthFailureError {
-        Map<String, String> headers = super.getHeaders();
+    public void addStringBody(String param, String value) {
+        mStringPart.put(param, value);
+    }
 
-        if (headers == null || headers.equals(Collections.emptyMap())) {
-            headers = new HashMap<String, String>();
+    private void buildMultipartEntity() {
+        entity.addPart(FILE_PART_NAME, new FileBody(mFilePart));
+        for (Map.Entry<String, String> entry : mStringPart.entrySet()) {
+            entity.addTextBody(entry.getKey(), entry.getValue());
         }
-
-        headers.put("Accept", "application/json");
-        headers.put("X-Requested-With", "XMLHTTPRequest");
-        headers.put("User-Agent", "KaliMessenger");
-        return headers;
     }
 
-    private void buildMultipartEntity(){
-        for (Map.Entry<String, String> entry : mParams.entrySet()) {
-            mBuilder.addTextBody(entry.getKey(), entry.getValue());
-        }
-        mBuilder.addBinaryBody(mFileFieldName, mImageFile, ContentType.create("image/jpg"), mFilename);
-        mBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-    }
     @Override
-    public String getBodyContentType(){
-        return mBodyContentType;
+    public String getBodyContentType() {
+        return httpentity.getContentType().getValue();
     }
+
     @Override
-    public byte[] getBody() throws AuthFailureError{
+    public byte[] getBody() throws AuthFailureError {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
-            HttpEntity entity = mBuilder.build();
-            mBodyContentType = entity.getContentType().getValue();
-            entity.writeTo(bos);
+            httpentity = entity.build();
+            httpentity.writeTo(bos);
         } catch (IOException e) {
-            VolleyLog.e("IOException writing to ByteArrayOutputStream bos, building the multipart request.");
+            VolleyLog.e("IOException writing to ByteArrayOutputStream");
         }
-
         return bos.toByteArray();
     }
+
+    @Override
+    protected Response<String> parseNetworkResponse(NetworkResponse response) {
+        return Response.success("Uploaded", getCacheEntry());
+    }
+
     @Override
     protected void deliverResponse(String response) {
         mListener.onResponse(response);
-    }
-    @Override
-    protected Response<String> parseNetworkResponse(NetworkResponse response) {
-        String parsed;
-        try {
-            parsed = new String(response.data, HttpHeaderParser.parseCharset(response.headers));
-        } catch (UnsupportedEncodingException e) {
-            parsed = new String(response.data);
-        }
-        return Response.success(parsed, HttpHeaderParser.parseCacheHeaders(response));
     }
 }
